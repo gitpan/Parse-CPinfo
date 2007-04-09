@@ -1,0 +1,56 @@
+=====================================================================
+Parse::CPinfo 
+=====================================================================
+I created this module to parse the output from cpinfo.  cpinfo is a
+troubleshooting tool commonly used on Check Point* products.
+
+cpinfo files are created by running 'cpinfo' from the command-line on
+a Check Point product and redirecting the output to a file.
+
+For example:
+cpinfo > /var/cpinfo.txt
+
+---------------------------------------------------------------------
+INSTALLATION
+---------------------------------------------------------------------
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+
+---------------------------------------------------------------------
+DEPENDENCIES
+---------------------------------------------------------------------
+This module requies that the following modules are installed:
+    Net::CIDR       any version (tested with 0.11)
+    Net::IPv4Addr   any version (tested with 0.10)
+    Regexp::Common  any version (tested with 2.120)
+
+
+---------------------------------------------------------------------
+TODO 
+---------------------------------------------------------------------
+This module has only been tested on the cpinfo output collected from
+a Check Point NGX R61 installation running under SecurePlatform (also
+R61).  
+
+
+---------------------------------------------------------------------
+BUGS 
+---------------------------------------------------------------------
+I don't promise that you won't find bugs.  If you do, please file
+a bug report at http://rt.cpan.org or automatically report test
+failures via CPAN::Reporter.
+
+
+---------------------------------------------------------------------
+COPYRIGHTS AND LICENSE
+---------------------------------------------------------------------
+Copyright (C) 2007 by Matthew M. Lange
+This library is licensed under the GNU Public License.
+
+* Check Point is a registered trademark of Check Point Software Technologies, Ltd.
+

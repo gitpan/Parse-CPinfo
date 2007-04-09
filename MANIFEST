@@ -1,0 +1,16 @@
+Changes
+COPYING
+examples/example.pl
+lib/Parse/CPinfo.pm
+Makefile.PL
+MANIFEST			This list of files
+README
+t/00_use.t
+t/01_fnf.t
+t/01_read.t
+t/02_testpod.t
+t/03_testpodcoverage.t
+t/04_interface.t
+t/05_interfacelist.t
+t/small.cpinfo
+META.yml                                 Module meta-data (added by MakeMaker)
