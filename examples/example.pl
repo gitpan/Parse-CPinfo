@@ -1,4 +1,4 @@
-#!/usr/bin/perl -wT
+#!/usr/bin/perl
 #
 #
 #
@@ -9,7 +9,7 @@ use Parse::CPinfo;
 my $p = Parse::CPinfo->new();
 my $fn = $ARGV[0] || '../t/small.cpinfo';
 
-$p->read($fn);
+$p->readfile($fn);
 
 print "Here is a list of sections in the cpinfo file:\n";
 foreach my $section ($p->getSectionList()) {

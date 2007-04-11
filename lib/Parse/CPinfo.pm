@@ -1,8 +1,9 @@
 package Parse::CPinfo;
 
-use 5.008008;
+use 5.006_001;
 use strict;
 no warnings;
+use base qw/Exporter/;
 use Carp;
 use IO::File;
 use Net::CIDR;
@@ -11,30 +12,7 @@ use Regexp::Common;
 
 require Exporter;
 
-our @ISA = qw(Exporter);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration	use Parse::CPinfo ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = (
-	'all' => [
-		qw(
-
-		  )
-	]
-);
-
-our @EXPORT_OK = (@{$EXPORT_TAGS{'all'}});
-
-our @EXPORT = qw(
-
-);
-
-our $VERSION = '0.88';
+our $VERSION = '0.881';
 
 sub new {
 	my $class = shift;
@@ -43,44 +21,35 @@ sub new {
 	return $self;
 }
 
-sub read {
+sub readfile {
 	my $self     = shift;
 	my $filename = shift;
 
 	# keep copy of filename in object
 	$self->{'_filename'} = $filename;
 	my $fh = new IO::File($filename, 'r');
-	croak "Unable to open $filename for reading" unless (defined($fh));
+	if (!defined $fh) {
+		croak "Unable to open $filename for reading";
+	}
 
 	# ensure we are in binary mode as some system (win32 for example)
 	# will assume we are handling text otherwise.
 	binmode $fh, ':raw';
-	if (defined($fh)) {
-		@{$self->{'_cpinfo_data'}} = <$fh>;
-	}
-	undef $fh;
-	$self->_parse();
-}
 
-sub _parse {
-	my $self  = shift;
-	my @lines = @{$self->{'_cpinfo_data'}};
+	my @lines = <$fh>;
 	chomp @lines;
 	my $linenumber = 0;
 	while ($linenumber < $#lines) {
 		$linenumber++;
-		if ($lines[$linenumber] =~ m/^\={46}$/) {
+		if ($lines[$linenumber] =~ m/^\={46}$/o) {
 			$linenumber++;
 			my $section = $lines[$linenumber];
 			$linenumber++;
 
 			foreach (0 .. $linenumber) {
 				$linenumber++;
-				if ($lines[$linenumber] !~ m/^\={46}$/) {
-
-					#print "L($linenumber): $lines[$linenumber]\n";
+				if ($lines[$linenumber] !~ m/^\={46}$/o) {
 					$self->{'config'}->{$section} = $self->{'config'}->{$section} . "$lines[$linenumber]\n";
-
 				}
 				else {
 					$linenumber--;
@@ -90,6 +59,7 @@ sub _parse {
 		}
 	}
 	$self->_parseinterfacelist();
+	return 1;
 }
 
 sub _parseinterfacelist {
@@ -98,37 +68,38 @@ sub _parseinterfacelist {
 	if (!$ifconfigtext) {
 		return;
 	}
-	my @s = split(/\n/, $ifconfigtext);
+	my @s = split /\n/, $ifconfigtext;
 	my ($int);
 	foreach my $line (@s) {
 		chomp $line;
-		if ($line =~ m/^(\w+)\s+/) {
+		if ($line =~ m/^(\w+)\s+/o) {
 			my $match = $1;
-			if ($match !~ m/ifconfig/) {
+			if ($match !~ m/ifconfig/o) {
 				$int = $1;
 				$self->{'interface'}->{$int}->{'name'} = $int;
 			}
 		}
-		if ($line =~ m/Link encap:(\w+)\s+/i) {
+		if ($line =~ m/Link encap:(\w+)\s+/io) {
 			$self->{'interface'}->{$int}->{'encap'} = $1;
 		}
-		if ($line =~ m/HWaddr ($RE{net}{MAC})/i) {
+		if ($line =~ m/HWaddr ($RE{net}{MAC})/io) {
 			$self->{'interface'}->{$int}->{'hwaddr'} = $1;
 		}
-		if ($line =~ m/inet addr:($RE{net}{IPv4})/i) {
+		if ($line =~ m/inet addr:($RE{net}{IPv4})/io) {
 			$self->{'interface'}->{$int}->{'inetaddr'} = $1;
 		}
-		if ($line =~ m/bcast:($RE{net}{IPv4})/i) {
+		if ($line =~ m/bcast:($RE{net}{IPv4})/io) {
 			$self->{'interface'}->{$int}->{'broadcast'} = $1;
 		}
-		if ($line =~ m/mask:($RE{net}{IPv4})/i) {
+		if ($line =~ m/mask:($RE{net}{IPv4})/io) {
 			$self->{'interface'}->{$int}->{'mask'}       = $1;
 			$self->{'interface'}->{$int}->{'masklength'} = ipv4_msk2cidr($self->{'interface'}->{$int}->{'mask'});
 		}
-		if ($line =~ m/MTU:(\d+)/i) {
+		if ($line =~ m/MTU:(\d+)/io) {
 			$self->{'interface'}->{$int}->{'mtu'} = $1;
 		}
 	}
+	return 1;
 }
 
 sub getInterfaceList {
@@ -145,7 +116,7 @@ sub getInterfaceInfo {
 sub getSectionList {
 	my $self = shift;
 	my @r;
-	foreach my $section (sort keys(%{$self->{config}})) {
+	foreach my $section (sort keys %{$self->{config}}) {
 		push @r, $section;
 	}
 	return @r;
@@ -162,35 +133,46 @@ __END__
 
 =head1 NAME
 
-Parse::CPinfo - Perl extension to parse cpinfo files
+Parse::CPinfo - Perl extension to parse output from cpinfo 
 
 =head1 SYNOPSIS
 
   use Parse::CPinfo;
-  my $parser = Parse::CPinfo->new();
-  $parser->read('cpinfofile');
+  my $p = Parse::CPinfo->new();
+  $p->readfile('cpinfofile');
 
-  # print the fwm version string that was parsed
-  print $p->{config}{'FireWall-1 Management (fwm) Version Information'};
+  # print the section containing the fwm version string 
+  print $p->getSection('FireWall-1 Management (fwm) Version Information');
+
+  # Get a list of interfaces
+  my @l = $p->getInterfaceList();
+
+  foreach my $int(@l) {
+      print "Interface $int\n";
+	  print "IP Address: " . $int->{'inetaddr'} . "\n";
+  }
 
 
 =head1 DESCRIPTION
 
-This module parses a B<cpinfo> file created by Check Point
-Software.
+This module parses the output from B<cpinfo>.  B<cpinfo> is a utility provided
+by Check Point Software, used for diagnostic purposes.
+
+
+=head1 SUBROUTINES/METHODS
 
 The following are the object methods:
 
 =head2 new
 
 Create a new parser object like this:
-my $parser = Parse::CPinfo->new();
+my $p = Parse::CPinfo->new();
 
-=head2 read
+=head2 readfile
 
 After creating the parser object, ask it to read the B<cpinfo> file
 for you:
-$parser->read('/full/path/to/cpinfofile');
+$parser->readfile('/full/path/to/cpinfofile');
 
 =head2 getSectionList
 
@@ -209,7 +191,6 @@ Use this method to get a list of the active interfaces.  Returns an array.
 Use this method to get information about a specific interface.  Takes a
 scalar (interface name) and returns a hash.
 
-
 =head1 SEE ALSO
 
 Check Point Software Technologies, Ltd., at
@@ -219,7 +200,12 @@ http://www.checkpoint.com/
 
 Matthew M. Lange, E<lt>mmlange@cpan.orgE<gt>
 
-=head1 COPYRIGHT AND LICENSE
+=head1 BUGS AND LIMITATIONS
+
+This library hasn't been extensively tested.  I'm sure there are bugs in the code.
+Please file a bug report at http://rt.cpan.org/ if you find a bug.
+
+=head1 LICENSE AND COPYRIGHT
 
 Copyright (C) 2007 by Matthew M. Lange
 

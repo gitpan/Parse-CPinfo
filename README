@@ -24,18 +24,29 @@ To install this module type the following:
 ---------------------------------------------------------------------
 DEPENDENCIES
 ---------------------------------------------------------------------
-This module requies that the following modules are installed:
+This module requires that the following modules are installed:
     Net::CIDR       any version (tested with 0.11)
     Net::IPv4Addr   any version (tested with 0.10)
     Regexp::Common  any version (tested with 2.120)
 
 
 ---------------------------------------------------------------------
-TODO 
+TODO
 ---------------------------------------------------------------------
-This module has only been tested on the cpinfo output collected from
-a Check Point NGX R61 installation running under SecurePlatform (also
-R61).  
+Better testing coverage.  This module has only been tested against
+the cpinfo from the following devices:
+
+    Hardware: VMWare Virtual Machine
+          OS: SecurePlatform R61
+  CP Version: NGX R61 HFA_01
+ CPinfo Size: 39560 bytes
+Parsing Time: 0m0.793s
+
+    Hardware: Dell Optiplex               
+          OS: SecurePlatform NGAI R55   
+  CP Version: NGX R55 HFA_19
+ CPinfo Size: 16282007
+Parsing Time: 7m27.051s (7.45085s) 2185254 bytes/min
 
 
 ---------------------------------------------------------------------

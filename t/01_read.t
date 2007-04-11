@@ -1,14 +1,25 @@
 #!/usr/bin/perl -wT
 
-use Test::More tests => 1;
+use Test::More tests => 4;
 use Parse::CPinfo;
 
 # Test 1
-$parser = Parse::CPinfo->new();
-$parser->read('t/small.cpinfo');
+$p = Parse::CPinfo->new();
+$p->readfile('t/small.cpinfo');
+ok(defined($p), 'Parser is defined');
 
-my @l = @{$parser->{'_cpinfo_data'}};
+# Test 2
+my $ipaddr = $p->getInterfaceInfo('eth0')->{'inetaddr'};
+ok($ipaddr eq '192.168.1.10', 'I was expecting 192.168.1.10');
 
-# must be 1158 lines in the array to pass
-ok($#l == 1158, 'FAIL: There are not 1158 lines in the array');
+# Test 3
+my @list = $p->getInterfaceList();
+ok($list[1] eq 'eth0', "I was looking for 'eth0' and got '$list[0]' instead");
+
+# Test 4
+$p2 = Parse::CPinfo->new();
+eval {
+	$p2->readfile('t/file-does-not-exist');    # this WILL fail, but that's OK
+};
+ok($@, 'Tried to open a non-existent file and it actually existed.  Weird.');
 

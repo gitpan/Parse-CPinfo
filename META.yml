@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:                Parse-CPinfo
-version:             0.88
-abstract:            Perl extension to parse cpinfo files
+version:             0.881
+abstract:            Perl extension to parse output from cpinfo 
 license:             GPL
 generated_by:        ExtUtils::MakeMaker version 6.32
 distribution_type:   module
