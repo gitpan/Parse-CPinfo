@@ -6,13 +6,15 @@ no warnings;
 use base qw/Exporter/;
 use Carp;
 use IO::File;
-use Net::CIDR;
-use Net::IPv4Addr qw( :all );
-use Regexp::Common;
-
 require Exporter;
 
-our $VERSION = '0.881';
+our $VERSION = '0.882';
+
+# extracted from Regexp::Common
+my $re_mac =
+'(?:(?:[0-9a-fA-F]{1,2}):(?:[0-9a-fA-F]{1,2}):(?:[0-9a-fA-F]{1,2}):(?:[0-9a-fA-F]{1,2}):(?:[0-9a-fA-F]{1,2}):(?:[0-9a-fA-F]{1,2}))';
+my $re_net_ipv4 =
+'(?:(?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](?:25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))';
 
 sub new {
 	my $class = shift;
@@ -28,7 +30,7 @@ sub readfile {
 	# keep copy of filename in object
 	$self->{'_filename'} = $filename;
 	my $fh = new IO::File($filename, 'r');
-	if (!defined $fh) {
+	if (!defined($fh)) {
 		croak "Unable to open $filename for reading";
 	}
 
@@ -49,6 +51,9 @@ sub readfile {
 			foreach (0 .. $linenumber) {
 				$linenumber++;
 				if ($lines[$linenumber] !~ m/^\={46}$/o) {
+					$lines[$linenumber] =~ s/\r\n//g;
+					$lines[$linenumber] =~ s/\r//g;
+					$lines[$linenumber] =~ s/\n//g;
 					$self->{'config'}->{$section} = $self->{'config'}->{$section} . "$lines[$linenumber]\n";
 				}
 				else {
@@ -82,24 +87,48 @@ sub _parseinterfacelist {
 		if ($line =~ m/Link encap:(\w+)\s+/io) {
 			$self->{'interface'}->{$int}->{'encap'} = $1;
 		}
-		if ($line =~ m/HWaddr ($RE{net}{MAC})/io) {
+		if ($line =~ m/HWaddr ($re_mac)/io) {
 			$self->{'interface'}->{$int}->{'hwaddr'} = $1;
 		}
-		if ($line =~ m/inet addr:($RE{net}{IPv4})/io) {
+		if ($line =~ m/inet addr:($re_net_ipv4)/io) {
 			$self->{'interface'}->{$int}->{'inetaddr'} = $1;
 		}
-		if ($line =~ m/bcast:($RE{net}{IPv4})/io) {
+		if ($line =~ m/bcast:($re_net_ipv4)/io) {
 			$self->{'interface'}->{$int}->{'broadcast'} = $1;
 		}
-		if ($line =~ m/mask:($RE{net}{IPv4})/io) {
+		if ($line =~ m/mask:($re_net_ipv4)/io) {
 			$self->{'interface'}->{$int}->{'mask'}       = $1;
-			$self->{'interface'}->{$int}->{'masklength'} = ipv4_msk2cidr($self->{'interface'}->{$int}->{'mask'});
+			$self->{'interface'}->{$int}->{'masklength'} = $self->_ipv4_msk2cidr($self->{'interface'}->{$int}->{'mask'});
 		}
 		if ($line =~ m/MTU:(\d+)/io) {
 			$self->{'interface'}->{$int}->{'mtu'} = $1;
 		}
 	}
 	return 1;
+}
+
+sub _ipv4_msk2cidr {
+	my $self = shift;
+	my $mask = shift;
+	($mask) = $mask =~ m/(\d+\.\d+\.\d+\.\d+)/o;
+
+	if (! defined($mask)) {
+		return undef;
+	}
+
+	for (split /\./, $mask) {
+		if ($_ < 0 or $_ > 255) {
+			return undef;
+		}
+	}
+	my @bytes = split /\./, $mask;
+
+	my $cidr = 0;
+	for (@bytes) {
+		my $bits = unpack("B*", pack("C", $_));
+		$cidr += $bits =~ tr /1/1/;
+	}
+	return $cidr;
 }
 
 sub getInterfaceList {
@@ -124,8 +153,28 @@ sub getSectionList {
 
 sub getSection {
 	my $self    = shift;
-	my $section = shift;
-	return $self->{'config'}->{$section};
+	my $query   = shift;
+	my $section = $self->{'config'}->{$query};
+	return $section;
+}
+
+sub getHostname {
+	my $self = shift;
+	my @section = split(/\n/, $self->getSection('System Information'));
+	my $hostname;
+	foreach my $linenumber (0 .. $#section) {
+		if ($section[$linenumber] =~ m/Issuing 'hostname'/i) {
+			$hostname = $section[$linenumber + 2];
+			chomp $hostname;
+			last;
+		}
+	}
+	if (defined($hostname)) {
+		return $hostname;
+	}
+	else {
+		return undef;
+	}
 }
 
 1;
@@ -181,6 +230,10 @@ Use this method to get a list of valid sections.  Returns an array.
 =head2 getSection
 
 Use this method to get a section of the cpinfo file.  Returns a scalar.
+
+=head2 getHostname
+
+Use this method to get the hostname of the server.  Returns a scalar.
 
 =head2 getInterfaceList
 

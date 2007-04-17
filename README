@@ -24,11 +24,9 @@ To install this module type the following:
 ---------------------------------------------------------------------
 DEPENDENCIES
 ---------------------------------------------------------------------
-This module requires that the following modules are installed:
-    Net::CIDR       any version (tested with 0.11)
-    Net::IPv4Addr   any version (tested with 0.10)
-    Regexp::Common  any version (tested with 2.120)
-
+This module no longer requires any external modules.  Thanks
+to the authors of Net::CIDR, Net::IPv4Addr, and Regexp::Common, I was
+able to incorporate their methods subroutines into Parse::CPInfo.
 
 ---------------------------------------------------------------------
 TODO
@@ -46,7 +44,13 @@ Parsing Time: 0m0.793s
           OS: SecurePlatform NGAI R55   
   CP Version: NGX R55 HFA_19
  CPinfo Size: 16282007
-Parsing Time: 7m27.051s (7.45085s) 2185254 bytes/min
+Parsing Time: 7m27.051s (7.45085m) 2,185,254 bytes/min
+   
+	Hardware: Dell PowerEdge 2950
+          OS: SecurePlatform NGX R60 Build 244
+  CP Version: NGX R60 HFA_05
+ CPinfo Size: 19498045
+Parsing Time: 7m17.349s (7.028915m) 2,773,976 bytes/min
 
 
 ---------------------------------------------------------------------

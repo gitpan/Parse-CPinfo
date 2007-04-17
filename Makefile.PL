@@ -8,9 +8,6 @@ WriteMakefile(
 	PREREQ_PM    => {
 		'Carp'           => 0,
 		'IO::File'       => 0,
-		'Net::CIDR'      => 0,
-		'Net::IPv4Addr'  => 0,
-		'Regexp::Common' => 0,
 	},
 	(
 		$] >= 5.005

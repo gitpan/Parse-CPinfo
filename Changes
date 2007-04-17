@@ -17,3 +17,7 @@ Revision history for Perl extension Parse::CPinfo.
 	- Told Perl that the regular expressions will not be changing via
 	  the /o option.
 
+0.882  Wed Apr 11 17:17:17 2007
+	- Added option to parse hostname
+	- Removed external module dependencies.
+
